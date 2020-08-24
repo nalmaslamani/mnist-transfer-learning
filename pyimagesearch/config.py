@@ -6,7 +6,7 @@ ORIG_INPUT_DATASET = "MNIST_Labels"
 
 # initialize the base path to the *new* directory that will contain
 # our images after computing the training and testing split
-BASE_PATH = "mnist dataset"
+BASE_PATH = "mnist_dataset"
 
 # define the names of the training, testing, and validation
 # directories
