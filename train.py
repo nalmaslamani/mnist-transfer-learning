@@ -1,5 +1,5 @@
 # USAGE
-# python train.py
+# python3 train.py
 
 # import the necessary packages
 from sklearn.linear_model import LogisticRegression
@@ -33,35 +33,18 @@ def load_data_split(splitPath):
 	return (data, labels)
 
 # derive the paths to the training and testing CSV files
-trainingPath = os.path.sep.join([config.BASE_CSV_PATH,
-	"{}.csv".format(config.TRAIN)])
-testingPath = os.path.sep.join([config.BASE_CSV_PATH,
-	"{}.csv".format(config.TEST)])
+trainingPath = ('./output/mnist_training.csv')
+testingPath = ('./output/mnist_evaluation.csv')
 
 # load the data from disk
 print("[INFO] loading data...")
 (trainX, trainY) = load_data_split(trainingPath)
 (testX, testY) = load_data_split(testingPath)
-print(trainX.shape)
-print(testX.shape)
-print(trainY.shape)
-trainY[1:1500]=1
-print(testY.shape)
-testY[1:500]=1
 
 # normalisation
-print(max(trainX))
-trainX=trainX/max(trainX)
-trainY=trainY/max(trainX)
-testX=testX/max(trainX)
-testY=testY/max(trainX)
 
-print(trainX.shape)
-print(testX.shape)
-print(trainY.shape)
-print(testY.shape)
-print(max(trainX))
-
+trainX=trainX/np.amax(trainX)
+testX=testX/np.amax(trainX)
 
 # Test Prent
 
@@ -70,7 +53,7 @@ le = pickle.loads(open(config.LE_PATH, "rb").read())
 
 # train the model
 print("[INFO] training model...")
-model = LogisticRegression(solver="lbfgs", multi_class="auto", max_iter=2) #150
+model = LogisticRegression(solver="lbfgs", multi_class="auto", max_iter=150) #150
 model.fit(trainX, trainY)
 
 # evaluate the model
