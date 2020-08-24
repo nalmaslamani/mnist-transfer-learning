@@ -1,5 +1,5 @@
 # USAGE
-# python extract_features.py
+# python3 extract_features.py
 
 # import the necessary packages
 from sklearn.preprocessing import LabelEncoder
@@ -15,7 +15,7 @@ import random
 import os
 
 #swtich environment variable
-CUDA_VISIBLE_DEVICES=1
+CUDA_VISIBLE_DEVICES=0
 
 # load the VGG16 network and initialize the label encoder
 print("[INFO] loading network...")
@@ -23,74 +23,218 @@ model = VGG16(weights="imagenet", include_top=False)
 le = None
 
 # loop over the data splits
-for split in (config.TRAIN, config.TEST, config.VAL):
-	# grab all image paths in the current split
-	print("[INFO] processing '{} split'...".format(split))
-	p = os.path.sep.join([config.BASE_PATH, split])
-	imagePaths = list(paths.list_images(p))
+#for split in (config.TRAIN, config.TEST, config.VAL):
+################################################################################################### TRAIN
+# grab all image paths in the current split
+print("[INFO] processing Training")
+p = ('./MNIST_Labels/mnist_training')
 
-	# randomly shuffle the image paths and then extract the class
-	# labels from the file paths
-	random.shuffle(imagePaths)
-	labels = [p.split(os.path.sep)[-2] for p in imagePaths]
+imagePaths = list(paths.list_images(p))
 
-	# if the label encoder is None, create it
-	if le is None:
-		le = LabelEncoder()
-		le.fit(labels)
+# randomly shuffle the image paths and then extract the class
+# labels from the file paths
+random.shuffle(imagePaths)
+labels = [p.split(os.path.sep)[-2] for p in imagePaths]
+
+# if the label encoder is None, create it
+if le is None:
 	le = LabelEncoder()
 	le.fit(labels)
+le = LabelEncoder()
+le.fit(labels)
 
-	# open the output CSV file for writing
-	csvPath = os.path.sep.join([config.BASE_CSV_PATH,
-		"{}.csv".format(split)])
-	csv = open(csvPath, "w")
+# open the output CSV file for writing
+csvPath = os.path.sep.join([config.BASE_CSV_PATH,
+	"mnist_training.csv"])
+csv = open(csvPath, "w")
 
-	# loop over the images in batches
-	for (b, i) in enumerate(range(0, len(imagePaths), config.BATCH_SIZE)):
-		# extract the batch of images and labels, then initialize the
-		# list of actual images that will be passed through the network
-		# for feature extraction
-		print("[INFO] processing batch {}/{}".format(b + 1,
-			int(np.ceil(len(imagePaths) / float(config.BATCH_SIZE)))))
-		batchPaths = imagePaths[i:i + config.BATCH_SIZE]
-		batchLabels = le.transform(labels[i:i + config.BATCH_SIZE])
-		batchImages = []
+# loop over the images in batches
+for (b, i) in enumerate(range(0, len(imagePaths), config.BATCH_SIZE)):
+	# extract the batch of images and labels, then initialize the
+	# list of actual images that will be passed through the network
+	# for feature extraction
+	print("[INFO] processing batch {}/{}".format(b + 1,
+		int(np.ceil(len(imagePaths) / float(config.BATCH_SIZE)))))
+	batchPaths = imagePaths[i:i + config.BATCH_SIZE]
+	batchLabels = le.transform(labels[i:i + config.BATCH_SIZE])
+	print(batchLabels)
+	batchImages = []
 
-		# loop over the images and labels in the current batch
-		for imagePath in batchPaths:
-			# load the input image using the Keras helper utility
-			# while ensuring the image is resized to 224x224 pixels
-			image = load_img(imagePath, target_size=(224, 224))
-			image = img_to_array(image)
+	# loop over the images and labels in the current batch
+	for imagePath in batchPaths:
+		# load the input image using the Keras helper utility
+		# while ensuring the image is resized to 224x224 pixels
+		image = load_img(imagePath, target_size=(224, 224))
+		image = img_to_array(image)
 
-			# preprocess the image by (1) expanding the dimensions and
-			# (2) subtracting the mean RGB pixel intensity from the
-			# ImageNet dataset
-			image = np.expand_dims(image, axis=0)
-			image = preprocess_input(image)
+		# preprocess the image by (1) expanding the dimensions and
+		# (2) subtracting the mean RGB pixel intensity from the
+		# ImageNet dataset
+		image = np.expand_dims(image, axis=0)
+		image = preprocess_input(image)
 
-			# add the image to the batch
-			batchImages.append(image)
+		# add the image to the batch
+		batchImages.append(image)
 
-		# pass the images through the network and use the outputs as
-		# our actual features, then reshape the features into a
-		# flattened volume
-		batchImages = np.vstack(batchImages)
-		features = model.predict(batchImages, batch_size=config.BATCH_SIZE)
-		features = features.reshape((features.shape[0], 7 * 7 * 512))
+	# pass the images through the network and use the outputs as
+	# our actual features, then reshape the features into a
+	# flattened volume
+	batchImages = np.vstack(batchImages)
+	features = model.predict(batchImages, batch_size=config.BATCH_SIZE)
+	features = features.reshape((features.shape[0], 7 * 7 * 512))
 
-		# loop over the class labels and extracted features
-		for (label, vec) in zip(batchLabels, features):
-			# construct a row that exists of the class label and
-			# extracted features
-			vec = ",".join([str(v) for v in vec])
-			csv.write("{},{}\n".format(label, vec))
+	# loop over the class labels and extracted features
+	for (label, vec) in zip(batchLabels, features):
+		# construct a row that exists of the class label and
+		# extracted features
+		vec = ",".join([str(v) for v in vec])
+		csv.write("{},{}\n".format(label, vec))
 
-	# close the CSV file
-	csv.close()
+# close the CSV file
+csv.close()
 
 # serialize the label encoder to disk
 f = open(config.LE_PATH, "wb")
 f.write(pickle.dumps(le))
 f.close()
+
+
+
+#################################################################################################TEST
+# grab all image paths in the current split
+print("[INFO] processing Training")
+p = ('./MNIST_Labels/mnist_evaluation')
+imagePaths = list(paths.list_images(p))
+
+# randomly shuffle the image paths and then extract the class
+# labels from the file paths
+random.shuffle(imagePaths)
+labels = [p.split(os.path.sep)[-2] for p in imagePaths]
+
+# if the label encoder is None, create it
+if le is None:
+	le = LabelEncoder()
+	le.fit(labels)
+le = LabelEncoder()
+le.fit(labels)
+
+# open the output CSV file for writing
+csvPath = os.path.sep.join([config.BASE_CSV_PATH,
+	"mnist_evaluation.csv"])
+csv = open(csvPath, "w")
+
+# loop over the images in batches
+for (b, i) in enumerate(range(0, len(imagePaths), config.BATCH_SIZE)):
+	# extract the batch of images and labels, then initialize the
+	# list of actual images that will be passed through the network
+	# for feature extraction
+	print("[INFO] processing batch {}/{}".format(b + 1,
+		int(np.ceil(len(imagePaths) / float(config.BATCH_SIZE)))))
+	batchPaths = imagePaths[i:i + config.BATCH_SIZE]
+	batchLabels = le.transform(labels[i:i + config.BATCH_SIZE])
+	print(batchLabels)
+	batchImages = []
+
+	# loop over the images and labels in the current batch
+	for imagePath in batchPaths:
+		# load the input image using the Keras helper utility
+		# while ensuring the image is resized to 224x224 pixels
+		image = load_img(imagePath, target_size=(224, 224))
+		image = img_to_array(image)
+
+		# preprocess the image by (1) expanding the dimensions and
+		# (2) subtracting the mean RGB pixel intensity from the
+		# ImageNet dataset
+		image = np.expand_dims(image, axis=0)
+		image = preprocess_input(image)
+
+		# add the image to the batch
+		batchImages.append(image)
+
+	# pass the images through the network and use the outputs as
+	# our actual features, then reshape the features into a
+	# flattened volume
+	batchImages = np.vstack(batchImages)
+	features = model.predict(batchImages, batch_size=config.BATCH_SIZE)
+	features = features.reshape((features.shape[0], 7 * 7 * 512))
+
+	# loop over the class labels and extracted features
+	for (label, vec) in zip(batchLabels, features):
+		# construct a row that exists of the class label and
+		# extracted features
+		vec = ",".join([str(v) for v in vec])
+		csv.write("{},{}\n".format(label, vec))
+
+# close the CSV file
+csv.close()
+
+
+
+########################################################################################### VALIDATE
+
+# grab all image paths in the current split
+print("[INFO] processing Training")
+p = ('./MNIST_Labels/mnist_validation')
+imagePaths = list(paths.list_images(p))
+
+# randomly shuffle the image paths and then extract the class
+# labels from the file paths
+random.shuffle(imagePaths)
+labels = [p.split(os.path.sep)[-2] for p in imagePaths]
+
+# if the label encoder is None, create it
+if le is None:
+	le = LabelEncoder()
+	le.fit(labels)
+le = LabelEncoder()
+le.fit(labels)
+
+# open the output CSV file for writing
+csvPath = os.path.sep.join([config.BASE_CSV_PATH,
+	"mnist_validation.csv"])
+csv = open(csvPath, "w")
+
+# loop over the images in batches
+for (b, i) in enumerate(range(0, len(imagePaths), config.BATCH_SIZE)):
+	# extract the batch of images and labels, then initialize the
+	# list of actual images that will be passed through the network
+	# for feature extraction
+	print("[INFO] processing batch {}/{}".format(b + 1,
+		int(np.ceil(len(imagePaths) / float(config.BATCH_SIZE)))))
+	batchPaths = imagePaths[i:i + config.BATCH_SIZE]
+	batchLabels = le.transform(labels[i:i + config.BATCH_SIZE])
+	print(batchLabels)
+	batchImages = []
+
+	# loop over the images and labels in the current batch
+	for imagePath in batchPaths:
+		# load the input image using the Keras helper utility
+		# while ensuring the image is resized to 224x224 pixels
+		image = load_img(imagePath, target_size=(224, 224))
+		image = img_to_array(image)
+
+		# preprocess the image by (1) expanding the dimensions and
+		# (2) subtracting the mean RGB pixel intensity from the
+		# ImageNet dataset
+		image = np.expand_dims(image, axis=0)
+		image = preprocess_input(image)
+
+		# add the image to the batch
+		batchImages.append(image)
+
+	# pass the images through the network and use the outputs as
+	# our actual features, then reshape the features into a
+	# flattened volume
+	batchImages = np.vstack(batchImages)
+	features = model.predict(batchImages, batch_size=config.BATCH_SIZE)
+	features = features.reshape((features.shape[0], 7 * 7 * 512))
+
+	# loop over the class labels and extracted features
+	for (label, vec) in zip(batchLabels, features):
+		# construct a row that exists of the class label and
+		# extracted features
+		vec = ",".join([str(v) for v in vec])
+		csv.write("{},{}\n".format(label, vec))
+
+# close the CSV file
+csv.close()
